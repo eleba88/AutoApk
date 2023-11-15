@@ -1,7 +1,8 @@
-# TVBoxOSC
+# AutoApks
 
-![Build](https://shields.io/github/actions/workflow/status/Eleba88/TVBoxAuto/build.yml?branch=main&logo=github&label=Build)
-[![Download](https://img.shields.io/github/v/release/o0HalfLife0o/TVBoxOSC?color=orange&logoColor=orange&label=Download&logo=DocuSign)](https://github.com/Eleba88/TVBoxAuto/releases/latest)
+![TVBOX](https://shields.io/github/actions/workflow/status/Eleba88/AutoApk/tvbox.yml?branch=main&logo=github&label=Build)
+![Music](https://shields.io/github/actions/workflow/status/Eleba88/AutoApk/musicfree.yml?branch=main&logo=github&label=Build)
+[![Download](https://img.shields.io/github/v/release/Eleba88/AutoApk?color=orange&logoColor=orange&label=Download&logo=DocuSign)](https://github.com/Eleba88/AutoApk/releases/latest)
 
 ## Credits
 This repo relies on the following third-party projects:
