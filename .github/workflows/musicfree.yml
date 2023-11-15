@@ -67,6 +67,12 @@ jobs:
           echo -e 'RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'  >> android/keystore.properties
           echo -e 'RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'    >> android/keystore.properties
 
+      - name: Compress Source Code
+        if: ${{ env.commit }}
+        working-directory: ${{ matrix.repoName }}
+        run: |
+          tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
@@ -113,19 +119,21 @@ jobs:
         uses: ncipollo/release-action@v1
         if: ${{ env.commit }}
         with:
-          name: ${{ env.tag }}
-          tag: ${{ env.tag }}
+          name: ${{ matrix.repoName }}_${{ env.tag }}
+          tag: ${{ matrix.repoName }}_${{ env.tag }}
           bodyFile: ${{ matrix.repoName }}/apk/${{ matrix.userName }}-Release.log
           allowUpdates: true
           removeArtifacts: true
           artifacts: |
             ${{ matrix.repoName }}/apk/*.apk
+            ${{ matrix.repoName }}/source-${{ env.commitS }}.*
 
       - name: Push to main
         if: ${{ env.commit }}
         continue-on-error: true
         run: |
           apkPath=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | grep "browser_download_url"| grep "[.]apk" | cut -d '"' -f 4)
+          echo "apkPath is $apkPath"
           echo "ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')" >> $GITHUB_ENV
           rm -rf ${{ matrix.repoName }}
           sed -i '/url =/d' ./.git/config
