@@ -63,7 +63,7 @@ jobs:
         working-directory: ${{ matrix.repoName }}
         run: |
           echo '修改VersionName'
-          sed -i "s#subscribeUrl: string;#subscribeUrl: '${{ secrets.SUBSCRIB_URL }}';#" src/core/config.ts
+          sed -i 's|subscribeUrl'\'');|subscribeUrl'\'') ?? '\''[{"url":"${{ secrets.SUBSCRIB_URL }}"}]'\'';|g' ../src/pages/setting/settingTypes/pluginSetting/views/pluginList.tsx
           sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.tag }}\'#" android/app/build.gradle
           cp -f ${{ github.workspace }}/.github/workflows/normal.jks android/app/normal.jks
           echo -e 'RELEASE_STORE_FILE=./normal.jks'                   >  android/keystore.properties
