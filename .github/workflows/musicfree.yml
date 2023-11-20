@@ -2,7 +2,7 @@ name: build MusicFree
 
 on:
   schedule:
-    - cron: 0 8 * * *
+    - cron: 0 0 * * *
   workflow_dispatch:
     inputs:
       rebuild:
@@ -162,4 +162,4 @@ jobs:
         continue-on-error: true
         with:
           msgtype: text
-          content: "新版通知: ${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk, 下载地址\n ${{ secrets.SHORT_URL }}/${{ env.ukey }}"
+          content: "新版通知: ${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}, 下载地址\n ${{ secrets.SHORT_URL }}/${{ env.ukey }}"
