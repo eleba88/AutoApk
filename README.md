@@ -7,4 +7,4 @@
 ## Credits
 This repo relies on the following third-party projects:
 - [takagen99/Box](https://github.com/takagen99/Box) (Updated: 38b1e8057e46715b28b7a94a6e0939ba6dfe6b0d)
-- [maotoumao/MusicFree](https://github.com/maotoumao/MusicFree) (Updated: d66f7ec7c5e8f26485b2da607978420e8eb7e022)
+- [maotoumao/MusicFree](https://github.com/maotoumao/MusicFree) (Updated: e5a0c4d718dd8de014c792b182a6f4128092b88f)
