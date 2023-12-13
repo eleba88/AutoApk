@@ -101,18 +101,13 @@ jobs:
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
-          apkInfo=$(aapt dump badging apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk |grep "package:" |  awk -F "'" '{print "\"apkPkg\":""\""$2"\",""\"apkVer\":""\""$6"\""}')
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
-          #export LESSCHARSET=utf-8
-          #echo -e "Credit: [${{ matrix.userName }}](${{ env.upStream }})\nCommit: ${{ env.commit }}\nChangelog:" > apk/${{ matrix.userName }}-Release.log
           if [ "${{ env.commit }}" == "${lastCommit}" ]; then
             msg=$(git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           else
             msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
-          releaseNot='{'$apkInfo',"msg":'$msg'}'
-          echo -e $releaseNot
-          echo -e $releaseNot > apk/${{ matrix.userName }}-Release.log
+          cat app/build/outputs/apk/release/output-metadata.json | jq -r '{"applicationId": .applicationId, "versionName": .elements[0].versionName, "msg": "'$msg'"}' >  apk/${{ matrix.userName }}-Release.log
       - name: Whether Or Not to Publish
         if: ${{ inputs.donotpublish && env.commit }}
         run: |
