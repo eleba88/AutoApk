@@ -70,13 +70,6 @@ jobs:
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC_STYLE, true);' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC, 0);' app/src/main/java/com/github/tvbox/osc/base/App.java
 
-      - name: Compress Source Code
-        if: ${{ env.commit }}
-        working-directory: ${{ matrix.repoName }}
-        run: |
-          #zip -q -x ".git/*" -x  ".github/*" -r source-${{ env.commitS }}.zip .
-          tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
-
       - name: Release Apk Sign
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
@@ -103,22 +96,22 @@ jobs:
           chmod +x gradlew
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
           rm -rf apk && mkdir -p apk
-          for file in `find -name "*.apk" -print`; do
-            mv "$file" apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk
-          done
 
       - name: Release Note
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
+          rm -rf apk && mkdir -p apk
+          for file in `find -name "*.apk" -print`; do
+            mv "$file" apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk
+          done
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
-          export LESSCHARSET=utf-8
-          echo -e "Credit: [${{ matrix.userName }}](${{ env.upStream }})\nCommit: ${{ env.commit }}\nChangelog:" > apk/${{ matrix.userName }}-Release.log
           if [ "${{ env.commit }}" == "${lastCommit}" ]; then
-            git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
+            msg=$(git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           else
-            git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
+            msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
+          cat app/build/outputs/apk/release/output-metadata.json | jq -r --arg msgValue "$msg" '{"applicationId": .applicationId, "versionName": .elements[0].versionName, "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
 
       - name: Whether Or Not to Publish
         if: ${{ inputs.donotpublish && env.commit }}
@@ -144,7 +137,6 @@ jobs:
           removeArtifacts: true
           artifacts: |
             ${{ matrix.repoName }}/apk/*.apk
-            ${{ matrix.repoName }}/source-${{ env.commitS }}.*
 
       - name: Push to main
         if: ${{ env.commit }}
