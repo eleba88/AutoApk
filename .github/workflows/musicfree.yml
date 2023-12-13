@@ -102,7 +102,7 @@ jobs:
             msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
           echo -e "msg: $msg"
-          cat android/app/build/outputs/apk/release/output-metadata.json | jq -r --arg msgValue $msg '{"applicationId": .applicationId, "versionName": .elements[0].versionName, "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
+          cat android/app/build/outputs/apk/release/output-metadata.json | jq -r --arg msgValue "$msg" '{"applicationId": .applicationId, "versionName": .elements[0].versionName, "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
 
       - name: Whether Or Not to Publish
         if: ${{ inputs.donotpublish && env.commit }}
