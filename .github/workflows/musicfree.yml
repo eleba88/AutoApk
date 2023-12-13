@@ -90,6 +90,9 @@ jobs:
           for file in `find -name "*.apk" -print`; do
             mv "$file" apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk
           done
+          for file in `find -name "output-metadata.json" -print`; do
+            echo -e "output-metadata: $file"
+          done
 
       - name: Release Note
         if: ${{ env.commit }}
