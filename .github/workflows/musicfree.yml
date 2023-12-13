@@ -70,12 +70,6 @@ jobs:
           echo -e 'RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'  >> android/keystore.properties
           echo -e 'RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'    >> android/keystore.properties
 
-      - name: Compress Source Code
-        if: ${{ env.commit }}
-        working-directory: ${{ matrix.repoName }}
-        run: |
-          tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
-
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
@@ -132,7 +126,6 @@ jobs:
           removeArtifacts: true
           artifacts: |
             ${{ matrix.repoName }}/apk/*.apk
-            ${{ matrix.repoName }}/source-${{ env.commitS }}.*
 
       - name: Push to main
         if: ${{ env.commit }}
