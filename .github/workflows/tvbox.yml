@@ -95,7 +95,6 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
-          rm -rf apk && mkdir -p apk
 
       - name: Release Note
         if: ${{ env.commit }}
@@ -111,7 +110,11 @@ jobs:
           else
             msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
-          cat app/build/outputs/apk/release/output-metadata.json | jq -r --arg msgValue "$msg" '{"applicationId": .applicationId, "versionName": .elements[0].versionName, "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
+          apkPath="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
+          ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
+          cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName,"apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
+          echo "renote=$(cat apk/${{ matrix.userName }}-Release.log)" >> $GITHUB_ENV
+          echo "ukey=$ukey" >> $GITHUB_ENV
 
       - name: Whether Or Not to Publish
         if: ${{ inputs.donotpublish && env.commit }}
@@ -142,9 +145,6 @@ jobs:
         if: ${{ env.commit }}
         continue-on-error: true
         run: |
-          apkPath=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | grep "browser_download_url"| grep "[.]apk" | cut -d '"' -f 4)
-          echo "ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')" >> $GITHUB_ENV
-          echo "renote=$(cat ${{ matrix.repoName }}/apk/${{ matrix.userName }}-Release.log)" >> $GITHUB_ENV
           rm -rf ${{ matrix.repoName }}
           sed -i '/url =/d' ./.git/config
           git config --local user.name "github-actions[bot]"
@@ -164,4 +164,4 @@ jobs:
         continue-on-error: true
         with:
           msgtype: text
-          content: "新版通知: ${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}, 下载地址\n ${{ secrets.SHORT_URL }}/${{ env.ukey }} \n ${{ env.renote }}"
+          content: "通知: ${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}, ${{ env.renote }}"
