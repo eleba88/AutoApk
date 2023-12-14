@@ -102,6 +102,7 @@ jobs:
             msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
           apkPath="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ env.tag }}/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
+          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"BBBBBB","password":"${{ secrets.SHORT_KEY }}"}'
           ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"BBBBBB","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
           cat android/app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName,"apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
           echo "renote=$(cat apk/${{ matrix.userName }}-Release.log)" >> $GITHUB_ENV
