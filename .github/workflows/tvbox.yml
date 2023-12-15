@@ -70,6 +70,7 @@ jobs:
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.API_URL, "${{ secrets.BOX_JSON }}");' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC_STYLE, true);' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC, 0);' app/src/main/java/com/github/tvbox/osc/base/App.java
+          echo "-keep class com.google.zxing.** {*;}" >> app/proguard-rules.pro
 
       - name: Release Apk Sign
         if: ${{ env.commit }}
