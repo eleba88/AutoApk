@@ -124,6 +124,16 @@ jobs:
         run: |
           echo "commit=" >> $GITHUB_ENV
 
+      - name: push-to-alist
+        uses: wj2008/auto-push-alist@master
+        if: ${{ env.commit }}
+        with:
+          username: ${{secrets.ALS_UNAME}}
+          password: ${{secrets.ALS_PASSWD}}
+          upUrl: ${{secrets.ALS_URL}}
+          saveDir: ${{secrets.ALS_DIR}}
+          upDir: ${{ matrix.repoName }}/apk
+
       - name: Upload App To Artifact
         uses: actions/upload-artifact@v3
         if: ${{ env.commit }}
@@ -143,16 +153,6 @@ jobs:
           removeArtifacts: true
           artifacts: |
             ${{ matrix.repoName }}/apk/*.apk
-
-      - name: push-to-alist
-        uses: wj2008/auto-push-alist@master
-        if: ${{ env.commit }}
-        with:
-          username: ${{secrets.ALS_UNAME}}
-          password: ${{secrets.ALS_PASSWD}}
-          upUrl: ${{secrets.ALS_URL}}
-          saveDir: ${{secrets.ALS_DIR}}
-          upDir: ${{ matrix.repoName }}/apk
 
       - name: Push to main
         if: ${{ env.commit }}
