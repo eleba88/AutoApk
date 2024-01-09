@@ -144,6 +144,16 @@ jobs:
           artifacts: |
             ${{ matrix.repoName }}/apk/*.apk
 
+      - name: push-to-alist
+        uses: wj2008/auto-push-alist@master
+        if: ${{ env.commit }}
+        with:
+          username: ${{secrets.ALS_UNAME}}
+          password: ${{secrets.ALS_PASSWD}}
+          upUrl: ${{secrets.ALS_URL}}
+          saveDir: ${{secrets.ALS_DIR}}
+          upDir: ${{ matrix.repoName }}/apk
+
       - name: Push to main
         if: ${{ env.commit }}
         continue-on-error: true
