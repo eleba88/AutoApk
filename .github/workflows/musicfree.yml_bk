@@ -1,8 +1,8 @@
-name: build TVBox
+name: build MusicFree
 
 on:
   schedule:
-    - cron: 30 0 * * *
+    - cron: 0 0 * * *
   workflow_dispatch:
     inputs:
       rebuild:
@@ -13,6 +13,7 @@ on:
         description: "构建后不提交发布新版"
         required: false
         type: boolean
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,12 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - userName: q215613905
-          #   repoName: TVBoxOS
-          #   branchName: main
-          - userName: takagen99
-            repoName: Box
-            branchName: main
+          - userName: maotoumao
+            repoName: MusicFree
+            branchName: master
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -64,28 +62,18 @@ jobs:
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
-          echo '修改VersionName'
-          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.tag }}\'#" app/build.gradle
-          sed -i "/android:text=/s#=\"#=\"${{ env.tag }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
-          sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.API_URL, "${{ secrets.BOX_JSON }}");' app/src/main/java/com/github/tvbox/osc/base/App.java
-          sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC_STYLE, true);' app/src/main/java/com/github/tvbox/osc/base/App.java
-          sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC, 0);' app/src/main/java/com/github/tvbox/osc/base/App.java
-          echo "-keep class com.google.zxing.** {*;}" >> app/proguard-rules.pro
+          sed -i 's|subscribeUrl'\'');|subscribeUrl'\'') ?? '\''[{"url":"${{ secrets.SUBSCRIB_URL }}"}]'\'';|g' src/pages/setting/settingTypes/pluginSetting/views/pluginList.tsx
+          #sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.tag }}\'#" android/app/build.gradle
+          cp -f ${{ github.workspace }}/.github/workflows/normal.jks android/app/normal.jks
+          echo -e 'RELEASE_STORE_FILE=./normal.jks'                   >  android/keystore.properties
+          echo -e 'RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'        >> android/keystore.properties
+          echo -e 'RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'  >> android/keystore.properties
+          echo -e 'RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'    >> android/keystore.properties
 
-      - name: Release Apk Sign
-        if: ${{ env.commit }}
-        working-directory: ${{ matrix.repoName }}
-        run: |
-          signingConfigs='ICAgIHNpZ25pbmdDb25maWdzIHtcCiAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICBteUNvbmZpZyB7XAogICAgICAgICAgICAgICAgc3RvcmVGaWxlIGZpbGUoUkVMRUFTRV9TVE9SRV9GSUxFKVwKICAgICAgICAgICAgICAgIHN0b3JlUGFzc3dvcmQgUkVMRUFTRV9TVE9SRV9QQVNTV09SRFwKICAgICAgICAgICAgICAgIGtleUFsaWFzIFJFTEVBU0VfS0VZX0FMSUFTXAogICAgICAgICAgICAgICAga2V5UGFzc3dvcmQgUkVMRUFTRV9LRVlfUEFTU1dPUkRcCiAgICAgICAgICAgICAgICB2MVNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICB2MlNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICBlbmFibGVWM1NpZ25pbmcgPSB0cnVlXAogICAgICAgICAgICAgICAgZW5hYmxlVjRTaWduaW5nID0gdHJ1ZVwKICAgICAgICAgICAgfVwKICAgICAgICB9XAogICAgfVwKXA=='
-          signingConfig='ICAgICAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICAgICAgc2lnbmluZ0NvbmZpZyBzaWduaW5nQ29uZmlncy5teUNvbmZpZ1wKICAgICAgICAgICAgfVwK'
-          signingConfigs="$(echo "$signingConfigs" |base64 -d )"
-          signingConfig="$(echo "$signingConfig" |base64 -d )"
-          sed -i -e "/defaultConfig {/i\\$signingConfigs " -e "/debug {/a\\$signingConfig " -e "/release {/a\\$signingConfig " app/build.gradle
-          cp -f ${{ github.workspace }}/.github/workflows/normal.jks app/normal.jks
-          sed -i '$a\RELEASE_STORE_FILE=./normal.jks'     ./gradle.properties
-          sed -i '$a\RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'            ./gradle.properties
-          sed -i '$a\RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'       ./gradle.properties
-          sed -i '$a\RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'         ./gradle.properties
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
 
       - name: Setup Gradle
         if: ${{ env.commit }}
@@ -95,8 +83,9 @@ jobs:
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
-          chmod +x gradlew
-          ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
+          npm install
+          cd android && chmod a+x gradlew
+          ./gradlew app:assembleRelease && cd -
 
       - name: Release Note
         if: ${{ env.commit }}
@@ -114,35 +103,15 @@ jobs:
             msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           fi
           apkPath="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ env.tag }}/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
-          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
-          ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
-          cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
+          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"BBBBBB","password":"${{ secrets.SHORT_KEY }}"}'
+          ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"BBBBBB","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
+          cat android/app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
           echo "renote=$(cat apk/${{ matrix.userName }}-Release.log)" >> $GITHUB_ENV
 
       - name: Whether Or Not to Publish
         if: ${{ inputs.donotpublish && env.commit }}
         run: |
           echo "commit=" >> $GITHUB_ENV
-
-      - name: push-to-alist
-        continue-on-error: true
-        uses: wj2008/auto-push-alist@master
-        if: ${{ env.commit }}
-        with:
-          username: ${{secrets.ALS_UNAME}}
-          password: ${{secrets.ALS_PASSWD}}
-          upUrl: ${{secrets.ALS_URL}}
-          saveDir: ${{secrets.ALS_DIR}}
-          upDir: ${{ matrix.repoName }}/apk
-
-      - name: Webhook
-        if: ${{ env.commit }}
-        continue-on-error: true
-        uses: joelwmale/webhook-action@master
-        with:
-          url: ${{ secrets.WEBHOOK_URL }}
-          headers: '{"repository": "joelwmale/webhook-action"}'
-          body: '{"title": "${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}", "content": "${{ env.renote }}"}'
 
       - name: Upload App To Artifact
         uses: actions/upload-artifact@v3
@@ -178,3 +147,13 @@ jobs:
           git add --all
           git commit -m "${{ env.commit }}"
           git push -u -f origin main
+
+      - name: WechatWork
+        if: ${{ env.commit }}
+        uses: chf007/action-wechat-work@master
+        env:
+          WECHAT_WORK_BOT_WEBHOOK: ${{secrets.QYVX_WEBHOOK}}
+        continue-on-error: true
+        with:
+          msgtype: text
+          content: "通知: ${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}, ${{ env.renote }}"
