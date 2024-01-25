@@ -6,18 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       rebuild:
-        description: "忽略构建记录以重新构建"
-        required: false
-        type: boolean
-      donotpublish:
-        description: "构建后不提交发布新版"
+        description: "重新构建"
         required: false
         type: boolean
 env:
   commit: ""
-  commitS: ""
-  upStream: ""
+  commitId: ""
   tag: ""
+  vname: ""
   renote: ""
 jobs:
   build:
@@ -35,53 +31,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Check New Commit
         run: |
-          upStream=https://github.com/${{ matrix.userName }}/${{ matrix.repoName }}
-          echo "upStream=$upStream" >> $GITHUB_ENV
-          commit=$(curl -sL $upStream/commits/${{ matrix.branchName }} |grep -o "/${{ matrix.userName }}/${{ matrix.repoName }}/commit/[a-z0-9]\+" |head -1 | cut -d\/ -f5)
+          repoPath="${{ matrix.userName }}/${{ matrix.repoName }}"
+          commit=$(curl -sL https://github.com/$repoPath/commits/${{ matrix.branchName }} |grep -o "/$repoPath/commit/[a-z0-9]\+" |head -1 | cut -d\/ -f5)
           if ! grep -q "$commit" README.md || [ "${{ inputs.rebuild }}" == "true" ]; then
+            git clone https://github.com/$repoPath -b ${{ matrix.branchName }}
+            cd ${{ matrix.repoName }}
+            vname=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${commit:0:7} -1)
+            echo "tag=${{ matrix.userName }}_${{ matrix.repoName }}_$vname" >> $GITHUB_ENV
             echo "commit=$commit" >> $GITHUB_ENV
-            echo "commitS=${commit:0:7}" >> $GITHUB_ENV
+            echo "vname=$vname" >> $GITHUB_ENV
           fi
-
-      - name: Checkout Source Code
-        if: ${{ env.commit }}
-        run: |
-          git clone ${{ env.upStream }} ${{ matrix.repoName }}
-          cd ${{ matrix.repoName }}
-          git checkout ${{ env.commit }}
-          echo "tag=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ env.commitS }} -1)" >> $GITHUB_ENV
-
-      - name: Gradle cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
 
       - name: Extra Modify
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
           echo '修改VersionName'
-          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.tag }}\'#" app/build.gradle
-          sed -i "/android:text=/s#=\"#=\"${{ env.tag }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
+          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.vname }}\'#" app/build.gradle
+          sed -i "/android:text=/s#=\"#=\"${{ env.vname }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.API_URL, "${{ secrets.BOX_JSON }}");' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC_STYLE, true);' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC, 0);' app/src/main/java/com/github/tvbox/osc/base/App.java
-          echo "-keep class com.google.zxing.** {*;}" >> app/proguard-rules.pro
-
-      - name: Release Apk Sign
-        if: ${{ env.commit }}
-        working-directory: ${{ matrix.repoName }}
-        run: |
+          echo '修改签名'
           signingConfigs='ICAgIHNpZ25pbmdDb25maWdzIHtcCiAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICBteUNvbmZpZyB7XAogICAgICAgICAgICAgICAgc3RvcmVGaWxlIGZpbGUoUkVMRUFTRV9TVE9SRV9GSUxFKVwKICAgICAgICAgICAgICAgIHN0b3JlUGFzc3dvcmQgUkVMRUFTRV9TVE9SRV9QQVNTV09SRFwKICAgICAgICAgICAgICAgIGtleUFsaWFzIFJFTEVBU0VfS0VZX0FMSUFTXAogICAgICAgICAgICAgICAga2V5UGFzc3dvcmQgUkVMRUFTRV9LRVlfUEFTU1dPUkRcCiAgICAgICAgICAgICAgICB2MVNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICB2MlNpZ25pbmdFbmFibGVkIHRydWVcCiAgICAgICAgICAgICAgICBlbmFibGVWM1NpZ25pbmcgPSB0cnVlXAogICAgICAgICAgICAgICAgZW5hYmxlVjRTaWduaW5nID0gdHJ1ZVwKICAgICAgICAgICAgfVwKICAgICAgICB9XAogICAgfVwKXA=='
           signingConfig='ICAgICAgICAgICAgaWYgKHByb2plY3QuaGFzUHJvcGVydHkoIlJFTEVBU0VfU1RPUkVfRklMRSIpKSB7XAogICAgICAgICAgICAgICAgc2lnbmluZ0NvbmZpZyBzaWduaW5nQ29uZmlncy5teUNvbmZpZ1wKICAgICAgICAgICAgfVwK'
           signingConfigs="$(echo "$signingConfigs" |base64 -d )"
@@ -92,6 +66,16 @@ jobs:
           sed -i '$a\RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'            ./gradle.properties
           sed -i '$a\RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'       ./gradle.properties
           sed -i '$a\RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'         ./gradle.properties
+
+      - name: Gradle cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Setup Gradle
         if: ${{ env.commit }}
@@ -110,36 +94,25 @@ jobs:
         run: |
           rm -rf apk && mkdir -p apk
           for file in `find -name "*.apk" -print`; do
-            mv "$file" apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk
+            mv "$file" apk/${{ env.tag }}.apk
           done
-          apkSize=$(stat -c%s apk/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk)
+          apkUrl="https://db2.518100.xyz/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.vname}}/${{ env.tag }}.apk"
+          apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
-          if [ "${{ env.commit }}" == "${lastCommit}" ]; then
-            msg=$(git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
-          else
-            msg=$(git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
-          fi
-          apkPath="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ env.tag }}/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
-          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
-          ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
-          cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
-          renote=$(cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" --arg apkSize "$apkSize" --arg ukey "$ukey" '{ "包名": .applicationId, "版本": .elements[0].versionName, "大小": $apkSize, "下载路径": "${{ secrets.SHORT_URL }}/$ukey", "更新日志": $msgValue }' | tr -d '{}' | tr ',' '\n' | sed 's/"//g')
+          msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
+          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "$apkUrl" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
+          renote=$(jq -c --arg content "$msg" '{"title": "${{ env.tag }}", "content": $content | @sh}')
           echo "renote=$renote" >> $GITHUB_ENV
-
-      - name: Whether Or Not to Publish
-        if: ${{ inputs.donotpublish && env.commit }}
-        run: |
-          echo "commit=" >> $GITHUB_ENV
 
       - name: push-to-alist
         continue-on-error: true
         uses: wj2008/auto-push-alist@master
         if: ${{ env.commit }}
         with:
-          username: ${{secrets.ALS_UNAME}}
-          password: ${{secrets.ALS_PASSWD}}
-          upUrl: ${{secrets.ALS_URL}}
-          saveDir: ${{secrets.ALS_DIR}}
+          username: ${{ secrets.ALS_UNAME }}
+          password: ${{ secrets.ALS_PASSWD }}
+          upUrl: ${{ secrets.ALS_URL }}
+          saveDir: "/private/db2/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.vname}}"
           upDir: ${{ matrix.repoName }}/apk
 
       - name: Webhook
@@ -149,23 +122,23 @@ jobs:
         with:
           url: ${{ secrets.WEBHOOK_URL }}
           headers: '{"repository": "joelwmale/webhook-action"}'
-          body: '{"title": "${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}", "content": "${{env.renote}}"}'
+          body: ${{ env.renote }}
 
-      - name: Upload App To Artifact
+      - name: Upload-Artifact
         uses: actions/upload-artifact@v3
         if: ${{ env.commit }}
         with:
-          name: ${{ matrix.userName }}-${{ matrix.repoName }}
+          name: ${{ env.tag }}
           path: |
             ${{ matrix.repoName }}/apk/*
 
-      - name: Release and Upload Assets
+      - name: Release-and-Upload-Assets
         uses: ncipollo/release-action@v1
         if: ${{ env.commit }}
         with:
-          name: ${{ matrix.repoName }}_${{ env.tag }}
-          tag: ${{ matrix.repoName }}_${{ env.tag }}
-          bodyFile: ${{ matrix.repoName }}/apk/${{ matrix.userName }}-Release.log
+          name: ${{ env.tag }}
+          tag: ${{ env.tag }}
+          bodyFile: ${{ matrix.repoName }}/apk/${{ env.tag }}-Release.log
           allowUpdates: true
           removeArtifacts: true
           artifacts: |
