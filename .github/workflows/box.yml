@@ -103,11 +103,15 @@ jobs:
           curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
           apkUrl="https://db2.518100.xyz/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.daytime}}/${{ env.tag }}.apk"
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
+          echo -e "apkSize: $apkSize\napkUrl: $apkUrl"
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
+          echo -e "lastCommit: $lastCommit"
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
+          echo -e "msg: $msg"
           msg=$(echo "$msg" |sed ':a;N;$!ba;s/\n/<\/br>/g')
+          echo -e "msg2: $msg"
           cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
-          renote='{ "title": "${{ env.tag }}", "content": "$msg" }')
+          renote=$(jq -c --arg title "${{ env.tag }}" --arg content "$msg" '{ "title": $title, "content": $content | @sh }')
           echo -e "renote -> $renote"
           echo "renote=$renote" >> $GITHUB_ENV
 
