@@ -11,7 +11,7 @@ on:
         type: boolean
 env:
   commit: ""
-  commitId: ""
+  daytime: ""
   tag: ""
   vname: ""
   renote: ""
@@ -40,9 +40,11 @@ jobs:
             git clone https://github.com/$repoPath -b ${{ matrix.branchName }}
             cd ${{ matrix.repoName }}
             vname=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${commit:0:7} -1)
+            daytime=$(git log --date=format:'%Y%m%d' --pretty=format:%cd ${commit:0:7} -1)
             echo "tag=${{ matrix.userName }}_${{ matrix.repoName }}_$vname" >> $GITHUB_ENV
             echo "commit=$commit" >> $GITHUB_ENV
             echo "vname=$vname" >> $GITHUB_ENV
+            echo "daytime=$daytime" >> $GITHUB_ENV
           fi
 
       - name: Extra Modify
@@ -50,7 +52,7 @@ jobs:
         working-directory: ${{ matrix.repoName }}
         run: |
           echo '修改VersionName'
-          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.vname }}\'#" app/build.gradle
+          sed -i "/versionName/s/\".*\"/ \"${{ env.vname }}\"/" app/build.gradle
           sed -i "/android:text=/s#=\"#=\"${{ env.vname }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.API_URL, "${{ secrets.BOX_JSON }}");' app/src/main/java/com/github/tvbox/osc/base/App.java
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.HOME_REC_STYLE, true);' app/src/main/java/com/github/tvbox/osc/base/App.java
@@ -96,12 +98,16 @@ jobs:
           for file in `find -name "*.apk" -print`; do
             mv "$file" apk/${{ env.tag }}.apk
           done
-          apkUrl="https://db2.518100.xyz/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.vname}}/${{ env.tag }}.apk"
+          apkPath="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ env.tag }}/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
+          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
+          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
+          apkUrl="https://db2.518100.xyz/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.daytime}}/${{ env.tag }}.apk"
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
-          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "$apkUrl" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
-          renote=$(jq -c --arg content "$msg" '{"title": "${{ env.tag }}", "content": $content | @sh}')
+          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
+          renote=$(jq -n --arg title "${{ env.tag }}-1616" --arg content "$msg" '{ "title": $title, "content": $content | @sh }')
+          echo -e "$renote"
           echo "renote=$renote" >> $GITHUB_ENV
 
       - name: push-to-alist
@@ -112,7 +118,7 @@ jobs:
           username: ${{ secrets.ALS_UNAME }}
           password: ${{ secrets.ALS_PASSWD }}
           upUrl: ${{ secrets.ALS_URL }}
-          saveDir: "/private/db2/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.vname}}"
+          saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.daytime}}"
           upDir: ${{ matrix.repoName }}/apk
 
       - name: Webhook
@@ -122,7 +128,7 @@ jobs:
         with:
           url: ${{ secrets.WEBHOOK_URL }}
           headers: '{"repository": "joelwmale/webhook-action"}'
-          body: ${{ env.renote }}
+          body: "${{ env.renote }}"
 
       - name: Upload-Artifact
         uses: actions/upload-artifact@v3
