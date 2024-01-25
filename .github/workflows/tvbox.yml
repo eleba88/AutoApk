@@ -117,7 +117,7 @@ jobs:
           username: ${{ secrets.ALS_UNAME }}
           password: ${{ secrets.ALS_PASSWD }}
           upUrl: ${{ secrets.ALS_URL }}
-          saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}/${{env.daytime}}"
+          saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}"
           upDir: ${{ matrix.repoName }}/apk
 
       - name: Webhook
