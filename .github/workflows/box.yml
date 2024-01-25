@@ -98,7 +98,7 @@ jobs:
           for file in `find -name "*.apk" -print`; do
             mv "$file" apk/${{ env.tag }}.apk
           done
-          apkUrl="https://github.com/${{ github.repository }}/releases/download/${{ matrix.repoName }}_${{ env.tag }}/${{ matrix.repoName }}_${{ matrix.userName }}_${{ env.tag }}.apk"
+          apkUrl="https://github.com/${{ github.repository }}/releases/download/${{ env.tag }}/${{ env.tag }}.apk"
           curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
           curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkUrl'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
@@ -107,7 +107,6 @@ jobs:
           msg=$(echo "$msg" |sed ':a;N;$!ba;s/\n/<\/br>/g')
           cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
           renote='{"title":"[BOX更新]${{ env.vname }}","content":"下载地址:${{ secrets.SHORT_URL }}/AAAAAA</br>'$msg'"}'
-          echo -e "renote -> $renote"
           echo "renote=$renote" >> $GITHUB_ENV
 
       - name: push-to-alist
