@@ -123,7 +123,7 @@ jobs:
           curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
           ukey=$(curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkPath'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'|jq -r '.key')
           cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": "${{ secrets.SHORT_URL }}/'$ukey'", "msg": $msgValue | @sh}' >  apk/${{ matrix.userName }}-Release.log
-          renote=$(cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" '包名: .applicationId \n版本: .elements[0].versionName \n大小: '$apkSize' \n下载路径: "${{ secrets.SHORT_URL }}/'$ukey' \n更新日志: $msgValue | @sh')
+          renote=$(cat app/build/outputs/apk/release/output-metadata.json | jq -c -r --arg msgValue "$msg" --arg apkSize "$apkSize" --arg ukey "$ukey" '包名: .applicationId \n版本: .elements[0].versionName \n大小: $apkSize \n下载路径: "${{ secrets.SHORT_URL }}/$ukey \n更新日志: $msgValue | @sh')
           echo "renote=$renote" >> $GITHUB_ENV
 
       - name: Whether Or Not to Publish
