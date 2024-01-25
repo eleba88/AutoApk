@@ -106,7 +106,7 @@ jobs:
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           msg=$(echo "$msg" |sed ':a;N;$!ba;s/\n/<\/br>/g')
           cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
-          renote='{"title":"[BOX更新]${{ env.vname }}","content":"下载地址:${{ secrets.SHORT_URL }}/AAAAAA</br>'$msg'"}'
+          renote='{"title":"[TVBOX]${{ env.vname }}","content":"下载地址: ${{ secrets.SHORT_URL }}/AAAAAA</br>'$msg'"}'
           echo "renote=$renote" >> $GITHUB_ENV
 
       - name: push-to-alist
