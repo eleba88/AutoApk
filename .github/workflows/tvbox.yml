@@ -52,6 +52,8 @@ jobs:
         working-directory: ${{ matrix.repoName }}
         run: |
           echo '修改VersionName'
+          sed -i 's/<string name="app_name">TVBox<\/string>/<string name="app_name">陌陌<\/string>/' app/src/main/res/values-zh/strings.xml
+          sed -i 's/applicationId.*/applicationId "com.apple.caculator"/g' app/build.gradle
           sed -i 's/versionName.*/versionName "${{ env.vname }}"/g' app/build.gradle
           sed -i "/android:text=/s#=\"#=\"${{ env.vname }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
           sed -i '/HawkConfig.DEBUG_OPEN/a\putDefault(HawkConfig.API_URL, "${{ secrets.BOX_JSON }}");' app/src/main/java/com/github/tvbox/osc/base/App.java
