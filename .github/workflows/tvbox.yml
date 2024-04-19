@@ -70,13 +70,13 @@ jobs:
           sed -i '$a\RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'            ./gradle.properties
           sed -i '$a\RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'       ./gradle.properties
           sed -i '$a\RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'         ./gradle.properties
-          
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: "temurin"
           java-version: 17
-        
+
       - name: Gradle cache
         uses: actions/cache@v3
         with:
@@ -134,7 +134,7 @@ jobs:
         uses: joelwmale/webhook-action@master
         with:
           url: ${{ secrets.WEBHOOK_URL }}
-          headers: '{"repository": "joelwmale/webhook-action"}'
+          headers: '{"repository": "joelwmale/webhook-action", "x-requested-id": "66fa52b9-3b8c-43bb-8660-66fa52b9"}'
           body: "${{ env.renote }}"
 
       - name: Upload-Artifact
