@@ -70,7 +70,13 @@ jobs:
           sed -i '$a\RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'            ./gradle.properties
           sed -i '$a\RELEASE_STORE_PASSWORD=${{ secrets.JKS_PASSWD }}'       ./gradle.properties
           sed -i '$a\RELEASE_KEY_PASSWORD=${{ secrets.JKS_PASSWD }}'         ./gradle.properties
-
+          
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+        
       - name: Gradle cache
         uses: actions/cache@v3
         with:
