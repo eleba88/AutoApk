@@ -113,7 +113,7 @@ jobs:
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           msg=$(echo "$msg" |sed ':a;N;$!ba;s/\n/<\/br>/g')
-          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.log
+          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.txt
           renote='{"title":"[TVBOX]${{ env.vname }}","content":"下载地址: ${{ secrets.SHORT_URL }}/AAAAAA</br>github: https://github.com/${{ github.repository }}</br>提交记录:</br>'$msg'"}'
           echo "renote=$renote" >> $GITHUB_ENV
 
@@ -151,7 +151,7 @@ jobs:
         with:
           name: ${{ env.tag }}
           tag: ${{ env.tag }}
-          bodyFile: ${{ matrix.repoName }}/apk/${{ env.tag }}-Release.log
+          bodyFile: ${{ matrix.repoName }}/apk/${{ env.tag }}-Release.txt
           allowUpdates: true
           removeArtifacts: true
           artifacts: |
