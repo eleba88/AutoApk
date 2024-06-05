@@ -119,14 +119,13 @@ jobs:
 
       - name: push-to-alist
         continue-on-error: true
-        uses: wj2008/auto-push-alist@master
+        uses: wj2008/auto-push-alist@v1
         if: ${{ env.commit }}
         with:
-          username: ${{ secrets.ALS_UNAME }}
-          password: ${{ secrets.ALS_PASSWD }}
+          token: ${{ secrets.ALS_TOKEN }}
           upUrl: ${{ secrets.ALS_URL }}
           saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}"
-          upDir: ${{ matrix.repoName }}/apk
+          upFile: ${{ matrix.repoName }}/apk/${{ env.tag }}.apk
 
       - name: Webhook
         if: ${{ env.commit }}
