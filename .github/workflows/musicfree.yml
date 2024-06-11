@@ -93,7 +93,6 @@ jobs:
             mv "$file" apk/${{ env.tag }}.apk
           done
           apkUrl="https://github.com/${{ github.repository }}/releases/download/${{ env.tag }}/${{ env.tag }}.apk"
-          echo "apkUrl => $apkUrl"
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
           echo "apkSize => $apkSize"
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
