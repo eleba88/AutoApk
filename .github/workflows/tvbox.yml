@@ -107,15 +107,15 @@ jobs:
             cp "$file" apk/Box_latest.apk
             mv "$file" apk/${{ env.tag }}.apk
           done
-          apkUrl="https://github.com/${{ github.repository }}/releases/download/${{ env.tag }}/${{ env.tag }}.apk"
-          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"del","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
-          curl ${{ secrets.SHORT_URL }} --data '{"cmd":"add","url":"${{ secrets.CF_PROXY }}'$apkUrl'","keyPhrase":"AAAAAA","password":"${{ secrets.SHORT_KEY }}"}'
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
+          time=$(date +%s%N)
+          body='[{"apkSize":"'$apkSize'","apkPkg":"com.apple.caculator","apkVer":"${{ env.vname }}","apkUrl":"${{ secrets.BOX_URL }}?t='$time'"}]'
+          curl '${{ secrets.FUCK0 }}' -H 'Content-Type: application/json' -H 'X-Requested-Id: ${{ secrets.REQUEST_ID }}' --data-raw ''$body''
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
           msg=$(echo "$msg" |sed ':a;N;$!ba;s/\n/<\/br>/g')
-          cat app/build/outputs/apk/release/output-metadata.json | jq -c --arg content "$msg" --arg apkUrl "${{ secrets.SHORT_URL }}/AAAAAA" '{"pkgName": .applicationId, "versionName": .elements[0].versionName, "apkSize": "'$apkSize'","apkUrl": $apkUrl, "msg": $content | @sh}' >  apk/${{ env.tag }}-Release.txt
-          renote='{"title":"[TVBOX]${{ env.vname }}","content":"下载地址: ${{ secrets.SHORT_URL }}/AAAAAA</br>github: https://github.com/${{ github.repository }}</br>提交记录:</br>'$msg'"}'
+          cat $msg >  apk/${{ env.tag }}-Release.txt
+          renote='{"title":"[TVBOX]${{ env.vname }}","content":"github: https://github.com/${{ github.repository }}</br>提交记录:</br>'$msg'"}'
           echo "renote=$renote" >> $GITHUB_ENV
 
       - name: push-to-alist
@@ -126,17 +126,7 @@ jobs:
           token: ${{ secrets.ALS_TOKEN }}
           upUrl: ${{ secrets.ALS_URL }}
           saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}"
-          upFile: ${{ matrix.repoName }}/apk/Box_latest.apk
-
-      - name: push-to-alist
-        continue-on-error: true
-        uses: wj2008/auto-push-alist@v1
-        if: ${{ env.commit }}
-        with:
-          token: ${{ secrets.ALS_TOKEN }}
-          upUrl: ${{ secrets.ALS_URL }}
-          saveDir: "${{ secrets.ALS_DIR }}/${{ matrix.userName }}_${{ matrix.repoName }}"
-          upFile: ${{ matrix.repoName }}/apk/${{ env.tag }}.apk
+          upDir: ${{ matrix.repoName }}/apk/
 
       - name: Webhook
         if: ${{ env.commit }}
@@ -144,7 +134,7 @@ jobs:
         uses: joelwmale/webhook-action@master
         with:
           url: ${{ secrets.WEBHOOK_URL }}
-          headers: '{"repository": "joelwmale/webhook-action", "x-requested-id": "66fa52b9-3b8c-43bb-8660-66fa52b9"}'
+          headers: '{"repository": "joelwmale/webhook-action", "x-requested-id": "${{ secrets.REQUEST_ID }}"}'
           body: "${{ env.renote }}"
 
       - name: Upload-Artifact
