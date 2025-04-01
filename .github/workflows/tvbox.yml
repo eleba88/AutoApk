@@ -98,7 +98,7 @@ jobs:
         if: ${{ env.commit }}
         working-directory: ${{ matrix.repoName }}
         run: |
-          chmod +x gradlew
+          chmod +x gradlew && touch local.properties
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
 
       - name: Release Note
