@@ -57,7 +57,7 @@ jobs:
           sed -i 's|(SP_ENABLE_SMS, false)|(SP_ENABLE_SMS, true)|g' app/src/main/java/com/idormy/sms/forwarder/utils/SettingUtils.kt
           sed -i 's|"com.idormy.sms.forwarder"|"com.android.forwarder"|g' app/build.gradle
           echo '修改签名'
-          mkdir keystore
+          mkdir keystore && touch keystore/keystore.properties
           cp -f ${{ github.workspace }}/.github/workflows/normal.jks keystore/pppscn.jks
           sed -i '$a\RELEASE_STORE_FILE=../keystore/pppscn.jks'         ./keystore/keystore.properties
           sed -i '$a\RELEASE_KEY_ALIAS=${{ secrets.JKS_ALIAS }}'        ./keystore/keystore.properties
