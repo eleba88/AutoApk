@@ -99,7 +99,7 @@ jobs:
           rm -rf apk && mkdir -p apk
           for file in `find -name "SmsF_*_arm64-v8a_release.apk" -print`; do
             cp "$file" apk/SmsF_arm64-v8a_latest.apk
-            mv "$file" apk/${{ env.tag }}.apk
+            cp "$file" apk/${{ env.tag }}.apk
           done
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
           time=$(date +%s%N)
