@@ -8,6 +8,7 @@
 This repo relies on the following third-party projects:
 - [takagen99/Box](https://github.com/takagen99/Box) (Updated: 29a26a1450be2aa3cee9e3926a8acb970c70156f)
 - [maotoumao/MusicFree](https://github.com/maotoumao/MusicFree) (Updated: 8309933e2348a3bc6a24f2fd5c2ca1298033e812)
+- [pppscn/SmsForwarder](https://github.com/pppscn/SmsForwarder) (Updated: f49310027eb17751be1da10cddc7310d52b1b4e8)
 
 ### MusicFree
 综合插件(集合多个音乐源): https://gitlab.com/acoolbook/musicfree/-/raw/main/music.json
