@@ -59,10 +59,10 @@ jobs:
           echo '修改签名'
           mkdir keystore && touch keystore/keystore.properties
           cp -f ${{ github.workspace }}/.github/workflows/normal.jks keystore/pppscn.jks
-          sed -i '$a\storeFile=../keystore/pppscn.jks'         ./keystore/keystore.properties
-          sed -i '$a\keyAlias=${{ secrets.JKS_ALIAS }}'        ./keystore/keystore.properties
-          sed -i '$a\keyPassword=${{ secrets.JKS_PASSWD }}'  ./keystore/keystore.properties
-          sed -i '$a\storePassword=${{ secrets.JKS_PASSWD }}'    ./keystore/keystore.properties
+          echo "storeFile=../keystore/pppscn.jks" >> ./keystore/keystore.properties
+          echo "keyAlias=${{ secrets.JKS_ALIAS }}" >> ./keystore/keystore.properties
+          echo "keyPassword=${{ secrets.JKS_PASSWD }}" >> ./keystore/keystore.properties
+          echo "storePassword=${{ secrets.JKS_PASSWD }}" >> ./keystore/keystore.properties
 
       - name: Setup Java 11
         uses: actions/setup-java@v4
