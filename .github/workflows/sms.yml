@@ -33,12 +33,13 @@ jobs:
         run: |
           repoPath="${{ matrix.userName }}/${{ matrix.repoName }}"
           commit=$(curl -sL https://github.com/$repoPath/commits/${{ matrix.branchName }} |grep -o "/$repoPath/commit/[a-z0-9]\+" |head -1 | cut -d\/ -f5)
-          echo 'commit => $commit'
+          echo "commit is $commit"
           if ! grep -q "$commit" README.md || [ "${{ inputs.rebuild }}" == "true" ]; then
             git clone https://github.com/$repoPath -b ${{ matrix.branchName }}
             cd ${{ matrix.repoName }}
             vname=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${commit:0:7} -1)
             daytime=$(git log --date=format:'%Y%m%d' --pretty=format:%cd ${commit:0:7} -1)
+            commit=$(git log -1 --format="%H")
             echo "tag=${{ matrix.userName }}_${{ matrix.repoName }}_$vname" >> $GITHUB_ENV
             echo "commit=$commit" >> $GITHUB_ENV
             echo "vname=$vname" >> $GITHUB_ENV
