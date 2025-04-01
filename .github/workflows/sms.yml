@@ -15,7 +15,6 @@ env:
   tag: ""
   vname: ""
   renote: ""
-  output: "${{ github.workspace }}/SmsForwarder/build/app/outputs/apk/release"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,6 +33,7 @@ jobs:
         run: |
           repoPath="${{ matrix.userName }}/${{ matrix.repoName }}"
           commit=$(curl -sL https://github.com/$repoPath/commits/${{ matrix.branchName }} |grep -o "/$repoPath/commit/[a-z0-9]\+" |head -1 | cut -d\/ -f5)
+          echo 'commit => $commit'
           if ! grep -q "$commit" README.md || [ "${{ inputs.rebuild }}" == "true" ]; then
             git clone https://github.com/$repoPath -b ${{ matrix.branchName }}
             cd ${{ matrix.repoName }}
