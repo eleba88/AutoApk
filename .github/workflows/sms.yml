@@ -144,8 +144,7 @@ jobs:
         if: ${{ env.commit }}
         with:
           name: ${{ env.tag }}
-          path: |
-            ${{ matrix.repoName }}/apk/*
+          path: ${{ github.workspace }}/${{ matrix.repoName }}build/app/outputs/apk/release/*.apk
 
       - name: Release-and-Upload-Assets
         uses: ncipollo/release-action@v1
@@ -156,8 +155,7 @@ jobs:
           bodyFile: ${{ matrix.repoName }}/apk/${{ env.tag }}-Release.txt
           allowUpdates: true
           removeArtifacts: true
-          artifacts: |
-            ${{ matrix.repoName }}/apk/*.apk
+          artifacts: ${{ github.workspace }}/${{ matrix.repoName }}build/app/outputs/apk/release/*.apk
 
       - name: Push to main
         if: ${{ env.commit }}
