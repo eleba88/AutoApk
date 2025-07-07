@@ -6,7 +6,7 @@
 
 ## Credits
 This repo relies on the following third-party projects:
-- [takagen99/Box](https://github.com/takagen99/Box) (Updated: 9a37a3757ef6f53429294caac2ba7c669784c7be)
+- [takagen99/Box](https://github.com/takagen99/Box) (Updated: 9fcd86189c7818ca26284aa69c4ce29c7a30b87f)
 - [maotoumao/MusicFree](https://github.com/maotoumao/MusicFree) (Updated: 8309933e2348a3bc6a24f2fd5c2ca1298033e812)
 - [pppscn/SmsForwarder](https://github.com/pppscn/SmsForwarder) (Updated: 751f1b31631d88dd99f979f0d2f020312d98f5c4)
 
