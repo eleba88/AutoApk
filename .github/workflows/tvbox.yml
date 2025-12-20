@@ -124,7 +124,7 @@ jobs:
           done
           apkSize=$(stat -c%s apk/${{ env.tag }}.apk)
           time=$(date +%s%N)
-          body='[{"apkSize":"'$apkSize'","apkPkg":"com.apple.caculator","apkVer":"${{ env.vname }}","apkUrl":"${{ secrets.BOX_URL }}?t='$time'"}]'
+          body='[{"apkVno":"1","apkSize":"'$apkSize'","apkPkg":"com.apple.caculator","apkVer":"${{ env.vname }}","apkUrl":"${{ secrets.BOX_URL }}?t='$time'"}]'
           curl '${{ secrets.FUCK0 }}' -H 'Content-Type: application/json' -H 'X-Requested-Id: ${{ secrets.REQUEST_ID }}' --data-raw ''$body''
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
           msg=$(git log --pretty=format:'%h - %s (%cr) <%an>' --abbrev-commit --topo-order ${lastCommit}^.. |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2-)
